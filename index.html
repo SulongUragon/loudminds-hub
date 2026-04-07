@@ -672,15 +672,47 @@
     if (!email || !email.includes('@')) { alert('enter a valid email'); return; }
     if (!status) { alert('answer the question'); return; }
 
-    // TODO: replace with your ConvertKit or Mailchimp API endpoint
-    // Example ConvertKit:
-    // fetch('https://api.convertkit.com/v3/forms/YOUR_FORM_ID/subscribe', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ api_key: 'YOUR_API_KEY', email, first_name: name, fields: { status } })
-    // });
+    const btn = document.querySelector('.btn-submit');
+    btn.textContent = 'locking in...';
+    btn.style.opacity = '0.7';
+    btn.disabled = true;
 
-    document.getElementById('successOverlay').classList.add('show');
+    try {
+      const res = await fetch('https://api.brevo.com/v3/contacts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'api-key': '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'
+        },
+        body: JSON.stringify({
+          email: email,
+          firstName: name,
+          listIds: [3],
+          attributes: { STATUS: status },
+          updateEnabled: true
+        })
+      });
+
+      if (res.ok || res.status === 204) {
+        document.getElementById('successOverlay').classList.add('show');
+      } else {
+        const err = await res.json();
+        if (err.code === 'duplicate_parameter') {
+          // Already subscribed — still show success
+          document.getElementById('successOverlay').classList.add('show');
+        } else {
+          alert('Something went wrong. Please try again.');
+          btn.textContent = 'Lock In My Spot →';
+          btn.style.opacity = '1';
+          btn.disabled = false;
+        }
+      }
+    } catch(e) {
+      alert('Network error. Please try again.');
+      btn.textContent = 'Lock In My Spot →';
+      btn.style.opacity = '1';
+      btn.disabled = false;
+    }
   }
 
   // Enter key support
